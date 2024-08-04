@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mediana Creative - Digital Agency</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="container">
+            <h1>Mediana Creative</h1>
+            <p>Your Gateway to Digital Excellence</p>
+            <a href="#services" class="cta-button">Explore Our Services</a>
+        </div>
+    </header>
+
+    <!-- Overview Section -->
+    <section class="overview" id="services">
+        <div class="container">
+            <h2>What We Do</h2>
+            <p>We create and manage websites, handle your social media presence, and offer comprehensive marketing consulting.</p>
+        </div>
+    </section>
+
+    <!-- Featured Services -->
+    <section class="services">
+        <div class="container">
+            <div class="service-item">
+                <h3>Website Creation</h3>
+                <p>We build stunning, responsive websites that drive results.</p>
+            </div>
+            <div class="service-item">
+                <h3>Social Media Management</h3>
+                <p>Boost your online presence across all major platforms.</p>
+            </div>
+            <div class="service-item">
+                <h3>Marketing Consulting</h3>
+                <p>Expert advice to elevate your brand and reach your audience.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Us -->
+    <section class="about-us">
+        <div class="container">
+            <h2>About Us</h2>
+            <p>We are a young, success-driven team with a passion for digital marketing. Though our journey as a team has just begun, each of us brings a wealth of individual experience to the table.</p>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials">
+        <div class="container">
+            <h2>Testimonials</h2>
+            <p>Client feedback will be showcased here. Stay tuned for more.</p>
+        </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="contact">
+        <div class="container">
+            <h2>Contact Us</h2>
+            <form action="#" method="post">
+                <input type="text" name="name" placeholder="Your Name" required>
+                <input type="email" name="email" placeholder="Your Email" required>
+                <input type="tel" name="phone" placeholder="Your Phone" required>
+                <textarea name="message" placeholder="Your Message" required></textarea>
+                <button type="submit">Send Message</button>
+            </form>
+            <div class="contact-info">
+                <p><strong>Email:</strong> <a href="mailto:igor.ilic@outlook.com">igor.ilic@outlook.com</a></p>
+                <p><strong>Phone:</strong> <a href="tel:+381652103679">+381 65 210 3679</a></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>Follow us:</p>
+            <a href="#">TikTok</a> | 
+            <a href="#">YouTube</a> | 
+            <a href="#">Instagram</a> | 
+            <a href="#">Facebook</a> | 
+            <a href="#">LinkedIn</a>
+            <p>&copy; 2024 Mediana Creative. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth Scroll for Navigation Links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+                console.log(`Smooth scrolling to ${this.getAttribute('href')}`);
+            });
+        });
+
+        // Basic Form Validation with Debugging
+        document.querySelector('form').addEventListener('submit', function (e) {
+            const name = document.querySelector('input[name="name"]');
+            const email = document.querySelector('input[name="email"]');
+            const phone = document.querySelector('input[name="phone"]');
+            const message = document.querySelector('textarea[name="message"]');
+
+            let valid = true;
+
+            // Reset all fields' border color
+            [name, email, phone, message].forEach(field => {
+                field.style.borderColor = '';
+            });
+
+            if (!name.value) {
+                name.style.borderColor = 'red';
+                valid = false;
+                console.log('Name field is empty');
+            }
+
+            if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
+                email.style.borderColor = 'red';
+                valid = false;
+                console.log('Invalid or empty email');
+            }
+
+            if (!phone.value) {
+                phone.style.borderColor = 'red';
+                valid = false;
+                console.log('Phone field is empty');
+            }
+
+            if (!message.value) {
+                message.style.borderColor = 'red';
+                valid = false;
+                console.log('Message field is empty');
+            }
+
+            if (!valid) {
+                e.preventDefault();
+                alert('Please fill in all fields correctly');
+                console.log('Form submission prevented due to invalid inputs');
+            } else {
+                console.log('Form submitted successfully');
+            }
+        });
+    </script>
+</body>
+</html>
