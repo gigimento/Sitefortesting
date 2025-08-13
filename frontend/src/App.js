@@ -107,7 +107,7 @@ function App() {
       await axios.post(`${API_BASE_URL}/api/users`, userData);
       setCurrentUser(userData);
       fetchUsers();
-      setCurrentView('dashboard');
+      setCurrentView('explore');
       
       // Reset form
       setPersonalityForm({
