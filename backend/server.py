@@ -71,64 +71,91 @@ You should respond naturally as this person would, incorporating their unique co
 
     async def generate_conversation(self, user1: dict, user2: dict, topic: str) -> List[dict]:
         """Generate a conversation between two AI clones"""
-        personality1 = PersonalityData(**user1["personality"])
-        personality2 = PersonalityData(**user2["personality"])
-        
-        # Create LLM chat instances for both personalities
-        chat1 = LlmChat(
-            api_key=self.api_key,
-            session_id=f"clone_{user1['user_id']}",
-            system_message=await self.generate_personality_prompt(personality1)
-        ).with_model("openai", "gpt-4o-mini")
-        
-        chat2 = LlmChat(
-            api_key=self.api_key,
-            session_id=f"clone_{user2['user_id']}",
-            system_message=await self.generate_personality_prompt(personality2)
-        ).with_model("openai", "gpt-4o-mini")
-        
-        conversation = []
-        
-        # Start the conversation
-        starter_prompt = f"Start a casual conversation with someone about {topic}. Make it natural and true to your personality. Just say something to begin the conversation - don't introduce yourself formally."
-        
-        # First message from user1's clone
-        user1_message = UserMessage(text=starter_prompt)
-        response1 = await chat1.send_message(user1_message)
-        
-        conversation.append({
-            "speaker": personality1.name,
-            "message": response1,
-            "timestamp": datetime.now().isoformat()
-        })
-        
-        # Generate 6-8 messages alternating between the two clones
-        last_message = response1
-        current_speaker = chat2
-        current_name = personality2.name
-        
-        for i in range(7):
-            # Create a response to the last message
-            response_message = UserMessage(text=f"Respond naturally to this message: '{last_message}' - keep the conversation flowing and stay in character.")
-            response = await current_speaker.send_message(response_message)
+        try:
+            personality1 = PersonalityData(**user1["personality"])
+            personality2 = PersonalityData(**user2["personality"])
+            
+            # Create LLM chat instances for both personalities
+            chat1 = LlmChat(
+                api_key=self.api_key,
+                session_id=f"clone_{user1['user_id']}_{int(asyncio.get_event_loop().time())}",
+                system_message=await self.generate_personality_prompt(personality1)
+            ).with_model("openai", "gpt-4o-mini")
+            
+            chat2 = LlmChat(
+                api_key=self.api_key,
+                session_id=f"clone_{user2['user_id']}_{int(asyncio.get_event_loop().time())}",
+                system_message=await self.generate_personality_prompt(personality2)
+            ).with_model("openai", "gpt-4o-mini")
+            
+            conversation = []
+            
+            # Start the conversation with a shorter, more focused prompt
+            starter_prompt = f"Start a brief conversation about {topic}. Say something natural and engaging to begin - keep it short and conversational."
+            
+            # First message from user1's clone with timeout
+            user1_message = UserMessage(text=starter_prompt)
+            
+            # Use asyncio.wait_for to add timeout
+            response1 = await asyncio.wait_for(
+                chat1.send_message(user1_message), 
+                timeout=15.0
+            )
             
             conversation.append({
-                "speaker": current_name,
-                "message": response,
+                "speaker": personality1.name,
+                "message": response1,
                 "timestamp": datetime.now().isoformat()
             })
             
-            last_message = response
+            # Generate 4-6 messages alternating between the two clones (reduced from 7)
+            last_message = response1
+            current_speaker = chat2
+            current_name = personality2.name
             
-            # Switch speakers
-            if current_speaker == chat2:
-                current_speaker = chat1
-                current_name = personality1.name
-            else:
-                current_speaker = chat2
-                current_name = personality2.name
-        
-        return conversation
+            for i in range(5):  # Reduced to 5 messages for faster generation
+                try:
+                    # Create a response to the last message with shorter prompt
+                    response_message = UserMessage(
+                        text=f"Respond briefly and naturally to: '{last_message}' - keep it conversational and stay in character."
+                    )
+                    
+                    # Add timeout for each message
+                    response = await asyncio.wait_for(
+                        current_speaker.send_message(response_message),
+                        timeout=15.0
+                    )
+                    
+                    conversation.append({
+                        "speaker": current_name,
+                        "message": response,
+                        "timestamp": datetime.now().isoformat()
+                    })
+                    
+                    last_message = response
+                    
+                    # Switch speakers
+                    if current_speaker == chat2:
+                        current_speaker = chat1
+                        current_name = personality1.name
+                    else:
+                        current_speaker = chat2
+                        current_name = personality2.name
+                        
+                except asyncio.TimeoutError:
+                    print(f"Timeout on message {i+1}, stopping conversation generation")
+                    break
+                except Exception as e:
+                    print(f"Error generating message {i+1}: {str(e)}")
+                    break
+            
+            return conversation
+            
+        except asyncio.TimeoutError:
+            raise HTTPException(status_code=408, detail="Conversation generation timed out")
+        except Exception as e:
+            print(f"Error in generate_conversation: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error generating conversation: {str(e)}")
 
 # Initialize AI conversation generator
 ai_conversation = AICloneConversation()
