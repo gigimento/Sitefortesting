@@ -215,13 +215,24 @@ async def create_conversation(request: ConversationRequest):
         user1 = users_collection.find_one({"user_id": request.user1_id}, {"_id": 0})
         user2 = users_collection.find_one({"user_id": request.user2_id}, {"_id": 0})
         
-        if not user1 or not user2:
-            raise HTTPException(status_code=404, detail="One or both users not found")
+        if not user1:
+            raise HTTPException(status_code=404, detail=f"User with ID {request.user1_id} not found")
+        if not user2:
+            raise HTTPException(status_code=404, detail=f"User with ID {request.user2_id} not found")
         
-        # Generate conversation
-        conversation_messages = await ai_conversation.generate_conversation(
-            user1, user2, request.topic
+        if request.user1_id == request.user2_id:
+            raise HTTPException(status_code=400, detail="Cannot create conversation between the same user")
+        
+        print(f"Generating conversation between {user1['username']} and {user2['username']} about {request.topic}")
+        
+        # Generate conversation with timeout
+        conversation_messages = await asyncio.wait_for(
+            ai_conversation.generate_conversation(user1, user2, request.topic),
+            timeout=60.0  # 60 second total timeout
         )
+        
+        if not conversation_messages:
+            raise HTTPException(status_code=500, detail="Failed to generate conversation messages")
         
         # Save conversation to database
         conversation_doc = {
@@ -235,6 +246,8 @@ async def create_conversation(request: ConversationRequest):
         
         conversations_collection.insert_one(conversation_doc)
         
+        print(f"Successfully created conversation with {len(conversation_messages)} messages")
+        
         return {
             "conversation_id": conversation_doc["conversation_id"],
             "messages": conversation_messages,
@@ -244,8 +257,13 @@ async def create_conversation(request: ConversationRequest):
             }
         }
         
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=408, detail="Conversation generation timed out. Please try again.")
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions as-is
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating conversation: {str(e)}")
+        print(f"Error in create_conversation: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @app.get("/api/conversations")
 async def get_all_conversations():
